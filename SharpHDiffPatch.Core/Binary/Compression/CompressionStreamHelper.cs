@@ -38,7 +38,7 @@ namespace SharpHDiffPatch.Core.Binary.Compression
         private static ZstdStreamFallback CreateZstdStreamFallback;
         private static readonly int _zstdWindowLogMax = Environment.Is64BitProcess ? 31 : 30;
 
-        internal static void GetDecompressStreamPlugin(CompressionMode type, Stream sourceStream, out Stream decompStream,
+        internal static void GetDecompressStreamPlugin(HDiffPatch HDiffPatch, CompressionMode type, Stream sourceStream, out Stream decompStream,
             long length, long compLength, out long outLength, bool isBuffered)
         {
             long toPosition = sourceStream.Position;
@@ -75,7 +75,7 @@ namespace SharpHDiffPatch.Core.Binary.Compression
                     decompStream = new CBZip2InputStream(rawStream, true, true); break;
                 case CompressionMode.lzma:
                 case CompressionMode.lzma2:
-                    decompStream = CreateLzmaStream(rawStream); break;
+                    decompStream = CreateLzmaStream(HDiffPatch, rawStream); break;
                 default:
                     throw new NotSupportedException($"[PatchCore::GetDecompressStreamPlugin] Compression Type: {type} is not supported");
             }
@@ -118,7 +118,7 @@ namespace SharpHDiffPatch.Core.Binary.Compression
             return new ZstdManagedStream(rawStream, decompressor, 16 << 10);
         }
 
-        private static Stream CreateLzmaStream(Stream rawStream)
+        private static Stream CreateLzmaStream(HDiffPatch HDiffPatch, Stream rawStream)
         {
             int propLen = rawStream.ReadByte();
             if (propLen != 5) return new LzmaStream(new byte[] { (byte)propLen }, rawStream); // Get LZMA2 if propLen != 5

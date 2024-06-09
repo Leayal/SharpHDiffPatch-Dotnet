@@ -17,10 +17,12 @@ namespace SharpHDiffPatch.Core.Patch
         private const int _maxArrayPoolLen = 4 << 20;
         private const int _maxArrayPoolSecondOffset = _maxArrayPoolLen / 2;
         private PatchCore _core;
+        private readonly HDiffPatch HDiffPatch;
 
-        internal PatchCoreFastBuffer(CancellationToken token, long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath)
+        internal PatchCoreFastBuffer(HDiffPatch hDiffPatch, CancellationToken token, long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath)
         {
-            _core = new PatchCore(token, sizeToBePatched, stopwatch, inputPath, outputPath);
+            _core = new PatchCore(hDiffPatch, token, sizeToBePatched, stopwatch, inputPath, outputPath);
+            this.HDiffPatch = hDiffPatch;
         }
 
         public void SetDirectoryReferencePair(DirectoryReferencePair pair) => _core.SetDirectoryReferencePair(pair);
@@ -29,7 +31,7 @@ namespace SharpHDiffPatch.Core.Patch
 
         public void GetDecompressStreamPlugin(CompressionMode type, Stream sourceStream, out Stream decompStream,
             long length, long compLength, out long outLength, bool isBuffered) =>
-            CompressionStreamHelper.GetDecompressStreamPlugin(type, sourceStream, out decompStream, length, compLength, out outLength, isBuffered);
+            CompressionStreamHelper.GetDecompressStreamPlugin(this.HDiffPatch, type, sourceStream, out decompStream, length, compLength, out outLength, isBuffered);
 
         public Stream GetBufferStreamFromOffset(CompressionMode compMode, Stream sourceStream,
             long start, long length, long compLength, out long outLength, bool isBuffered, bool isFastBufferUsed) =>

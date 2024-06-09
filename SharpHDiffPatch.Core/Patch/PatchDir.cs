@@ -30,46 +30,26 @@ namespace SharpHDiffPatch.Core.Patch
         internal long[] newExecuteList;
     }
 
-    public sealed class PatchDir : IPatch
+    public sealed class PatchDir : HDiffPatchFile
     {
-        private HeaderInfo headerInfo;
-        private DataReferenceInfo referenceInfo;
-        private Func<FileStream> spawnPatchStream;
-        private string basePathInput;
-        private string basePathOutput;
-        private bool useBufferedPatch;
-        private bool useFullBuffer;
-        private bool useFastBuffer;
+        private readonly DataReferenceInfo referenceInfo;
 #if USEEXPERIMENTALMULTITHREAD
         private bool useMultiThread;
 #endif
         private int padding;
-        private CancellationToken token;
 
-        public PatchDir(HeaderInfo headerInfo, DataReferenceInfo referenceInfo, string patchPath, CancellationToken token
+        public PatchDir(HDiffPatch hDiffPatch, HeaderInfo headerInfo, DataReferenceInfo referenceInfo, string input, string output, bool useBufferedPatch, bool useFullBuffer, bool useFastBuffer, CancellationToken token
 #if USEEXPERIMENTALMULTITHREAD
             , bool useMultiThread
 #endif
-            )
+            ) : base(hDiffPatch, headerInfo, input, output, token, useBufferedPatch, useFullBuffer, useFastBuffer)
         {
-            this.token = token;
-            this.headerInfo = headerInfo;
             this.referenceInfo = referenceInfo;
-#if USEEXPERIMENTALMULTITHREAD
-            this.useMultiThread = useMultiThread;
-#endif
-            spawnPatchStream = new Func<FileStream>(() => new FileStream(patchPath, FileMode.Open, FileAccess.Read, FileShare.Read));
         }
 
-        public void Patch(string input, string output, bool useBufferedPatch, bool useFullBuffer, bool useFastBuffer)
+        public override void Patch()
         {
-            basePathInput = input;
-            basePathOutput = output;
-            this.useBufferedPatch = useBufferedPatch;
-            this.useFullBuffer = useFullBuffer;
-            this.useFastBuffer = useFastBuffer;
-
-            using (FileStream patchStream = spawnPatchStream())
+            using (var patchStream = spawnPatchStream())
             {
                 padding = headerInfo.compMode == CompressionMode.zlib ? 1 : 0;
                 HDiffPatch.Event.PushLog($"[PatchDir::Patch] Padding applied: {padding} byte(s)", Verbosity.Debug);
@@ -87,11 +67,11 @@ namespace SharpHDiffPatch.Core.Patch
                 else
 #endif
                 if (this.useFastBuffer && this.useBufferedPatch && !headerInfo.isSingleCompressedDiff)
-                    patchCore = new PatchCoreFastBuffer(token, headerInfo.newDataSize, Stopwatch.StartNew(), basePathInput, basePathOutput);
+                    patchCore = new PatchCoreFastBuffer(this. HDiffPatch, token, headerInfo.newDataSize, Stopwatch.StartNew(), basePathInput, basePathOutput);
                 else
-                    patchCore = new PatchCore(token, headerInfo.newDataSize, Stopwatch.StartNew(), basePathInput, basePathOutput);
+                    patchCore = new PatchCore(this.HDiffPatch, token, headerInfo.newDataSize, Stopwatch.StartNew(), basePathInput, basePathOutput);
 
-                CompressionStreamHelper.GetDecompressStreamPlugin(headerInfo.compMode, patchStream, out Stream decompHeadStream,
+                CompressionStreamHelper.GetDecompressStreamPlugin(HDiffPatch, headerInfo.compMode, patchStream, out Stream decompHeadStream,
                     referenceInfo.headDataSize, referenceInfo.headDataCompressedSize - headerPadding, out _, this.useBufferedPatch);
 
                 HDiffPatch.Event.PushLog($"[PatchDir::Patch] Initializing stream to binary readers", Verbosity.Debug);
@@ -116,7 +96,7 @@ namespace SharpHDiffPatch.Core.Patch
                     HDiffPatch.Event.PushLog($"[PatchDir::Patch] Seek the patch stream to: {referenceInfo.hdiffDataOffset}. Jump to read header for clip streams!", Verbosity.Verbose);
                     patchStream.Position = referenceInfo.hdiffDataOffset;
                     if (!headerInfo.isSingleCompressedDiff)
-                        _ = Header.TryParseHeaderInfo(patchStream, "", out headerInfo, out _);
+                        _ = Header.TryParseHeaderInfo(HDiffPatch, patchStream, this.HDiffPatch.diffPath, out headerInfo, out _);
                     else
                         HDiffPatch.Event.PushLog($"[PatchDir::Patch] This patch is a \"single diff\" type!", Verbosity.Info);
 

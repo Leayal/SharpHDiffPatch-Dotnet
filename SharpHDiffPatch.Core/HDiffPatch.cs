@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using SharpHDiffPatch.Core.Binary.Compression;
+using System.Runtime.CompilerServices;
 
 namespace SharpHDiffPatch.Core
 {
@@ -105,56 +106,63 @@ namespace SharpHDiffPatch.Core
 
     public sealed partial class HDiffPatch
     {
-        private HeaderInfo headerInfo { get; set; }
-        private DataReferenceInfo referenceInfo { get; set; }
-        private Stream diffStream { get; set; }
-        private string diffPath { get; set; }
-        private bool isPatchDir { get; set; }
+        private HeaderInfo headerInfo { get; }
+        private DataReferenceInfo referenceInfo { get;  }
+        // private Stream diffStream { get; }
+        public readonly string diffPath;
+        private bool isPatchDir { get; }
 
-        internal long currentSizePatched { get; set; }
-        internal long totalSizePatched { get; set; }
+        // Why it this even here?
+        // internal long currentSizePatched;
+        // internal long totalSizePatched;
 
-        internal static PatchEvent PatchEvent = new PatchEvent();
-        public static EventListener Event = new EventListener();
+        internal readonly PatchEvent PatchEvent = new PatchEvent();
+        public readonly EventListener Event = new EventListener();
         public static Verbosity LogVerbosity = Verbosity.Quiet;
+        private bool disposedValue;
 
-        public HDiffPatch()
+        public long NewDataSize
         {
-            isPatchDir = true;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => headerInfo.newDataSize;
         }
 
-        #region Header Initialization
-        public void Initialize(string diff)
+        public HDiffPatch(string diff)
         {
-            diffPath = diff;
-
-            using (diffStream = new FileStream(diff, FileMode.Open, FileAccess.Read))
+            // isPatchDir = true;
+            this.diffPath = diff;
+            using (var diffStream = new FileStream(diff, FileMode.Open, FileAccess.Read))
             {
-                isPatchDir = Header.TryParseHeaderInfo(diffStream, diffPath, out HeaderInfo headerInfo, out DataReferenceInfo referenceInfo);
+                isPatchDir = Header.TryParseHeaderInfo(this, diffStream, diff, out HeaderInfo headerInfo, out DataReferenceInfo referenceInfo);
 
                 this.headerInfo = headerInfo;
                 this.referenceInfo = referenceInfo;
             }
         }
 
-        public void Patch(string inputPath, string outputPath, bool useBufferedPatch, CancellationToken token = default, bool useFullBuffer = false, bool useFastBuffer = false
+        #region Header Initialization
+
+        public void Patch(string inputPath, string outputPath, CancellationToken token = default, bool useBufferedPatch = false, bool useFullBuffer = false, bool useFastBuffer = false
 #if USEEXPERIMENTALMULTITHREAD
             , bool useMultiThread = false
 #endif
             )
         {
-            IPatch patcher;
-            if (isPatchDir && headerInfo.isInputDir && headerInfo.isOutputDir) patcher = new PatchDir(headerInfo, referenceInfo, diffPath, token
+            using (HDiffPatchFile patcher = (isPatchDir && headerInfo.isInputDir && headerInfo.isOutputDir) ?
+                (HDiffPatchFile)(new PatchDir(this, headerInfo, referenceInfo, inputPath, outputPath, useBufferedPatch, useFullBuffer, useFastBuffer, token
 #if USEEXPERIMENTALMULTITHREAD
             useMultiThread
 #endif
-            );
-            else patcher = new PatchSingle(headerInfo, token);
-            patcher.Patch(inputPath, outputPath, useBufferedPatch, useFullBuffer, useFastBuffer);
+                ))
+                :
+                new PatchSingle(this, headerInfo, inputPath, outputPath, useBufferedPatch, useFullBuffer, useFastBuffer, token))
+            {
+                patcher.Patch();
+            }
         }
 #endregion
 
-        internal static void DisplayDirPatchInformation(long oldFileSize, long newFileSize, HeaderInfo headerInfo)
+        internal void DisplayDirPatchInformation(long oldFileSize, long newFileSize, HeaderInfo headerInfo)
         {
             Event.PushLog("Patch Information:");
             Event.PushLog($"    Size -> Old: {oldFileSize} bytes | New: {newFileSize} bytes");
@@ -172,30 +180,24 @@ namespace SharpHDiffPatch.Core
             }
         }
 
-        internal static void UpdateEvent(long read, ref long currentSizePatched, ref long totalSizePatched, Stopwatch patchStopwatch)
+        internal void UpdateEvent(long read, ref long currentSizePatched, ref long totalSizePatched, Stopwatch patchStopwatch)
         {
-            lock (PatchEvent)
-            {
-                PatchEvent.UpdateEvent(currentSizePatched += read, totalSizePatched, read, patchStopwatch.Elapsed.TotalSeconds);
-                Event.PushEvent(PatchEvent);
-            }
+            PatchEvent.UpdateEvent(Interlocked.Add(ref currentSizePatched, read), totalSizePatched, read, patchStopwatch.Elapsed.TotalSeconds);
+            Event.PushEvent(PatchEvent);
         }
 
         public static long GetHDiffNewSize(string path)
         {
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                bool isDirPatch = Header.TryParseHeaderInfo(fs, path, out HeaderInfo headerInfo, out DataReferenceInfo _headerInfo);
-                return headerInfo.newDataSize;
-            }
+            var file = new HDiffPatch(path);
+            return file.NewDataSize;
         }
     }
 
     public class EventListener
     {
         // Log for external listener
-        public static event EventHandler<PatchEvent> PatchEvent;
-        public static event EventHandler<LoggerEvent> LoggerEvent;
+        public event EventHandler<PatchEvent> PatchEvent;
+        public event EventHandler<LoggerEvent> LoggerEvent;
         public void PushEvent(PatchEvent patchEvent) => PatchEvent?.Invoke(this, patchEvent);
         public void PushLog(in string message, Verbosity logLevel = Verbosity.Info)
         {

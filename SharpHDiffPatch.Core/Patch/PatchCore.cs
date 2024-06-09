@@ -57,21 +57,23 @@ namespace SharpHDiffPatch.Core.Patch
         internal const int _maxArrayPoolLen = 4 << 20;
         internal const int _maxArrayPoolSecondOffset = _maxArrayPoolLen / 2;
 
-        internal CancellationToken _token;
+        internal readonly CancellationToken _token;
         internal long _sizeToBePatched;
         internal long _sizePatched;
         internal Stopwatch _stopwatch;
-        internal string _pathInput;
-        internal string _pathOutput;
+        internal readonly string _pathInput;
+        internal readonly string _pathOutput;
         internal DirectoryReferencePair? _dirReferencePair;
+        private readonly HDiffPatch HDiffPatch;
 
         static PatchCore()
         {
             SetRleProcDelegate();
         }
 
-        internal PatchCore(CancellationToken token, long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath)
+        internal PatchCore(HDiffPatch instance, CancellationToken token, long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath)
         {
+            this.HDiffPatch = instance;
             _token = token;
             _sizeToBePatched = sizeToBePatched;
             _stopwatch = stopwatch;
@@ -102,7 +104,7 @@ namespace SharpHDiffPatch.Core.Patch
         {
             sourceStream.Position = start;
 
-            CompressionStreamHelper.GetDecompressStreamPlugin(compMode, sourceStream, out Stream returnStream, length, compLength, out outLength, isBuffered);
+            CompressionStreamHelper.GetDecompressStreamPlugin(HDiffPatch, compMode, sourceStream, out Stream returnStream, length, compLength, out outLength, isBuffered);
 
             if (isBuffered && !isFastBufferUsed)
             {

@@ -5,7 +5,7 @@ using static SharpHDiffPatch.Core.Binary.StreamExtension;
 
 namespace SharpHDiffPatch.Core.Patch
 {
-    internal sealed class Header
+    internal static class Header
     {
 #if !(NETSTANDARD2_0 || NET461_OR_GREATER)
         private static readonly char[] HDIFF_HEAD = new char[] { 'H', 'D', 'I', 'F', 'F' };
@@ -13,10 +13,10 @@ namespace SharpHDiffPatch.Core.Patch
         private const string HDIFF_HEAD = "HDIFF";
 #endif
 
-        internal static bool TryParseHeaderInfo(Stream sr, string diffPath,
+        internal static bool TryParseHeaderInfo(this HDiffPatch HDiffPatch, Stream sr, string diffPath,
             out HeaderInfo headerInfo, out DataReferenceInfo referenceInfo)
         {
-            headerInfo = new HeaderInfo();
+            headerInfo = new HeaderInfo() { patchPath = diffPath };
             referenceInfo = new DataReferenceInfo();
 
             string headerInfoLine = sr.ReadStringToNull();
@@ -40,7 +40,7 @@ namespace SharpHDiffPatch.Core.Patch
 
                 headerInfo.headerMagic = hInfoArr[0];
 
-                TryParseCompressionEnum(hInfoArr[1], out headerInfo.compMode);
+                TryParseCompressionEnum(HDiffPatch, hInfoArr[1], out headerInfo.compMode);
                 HDiffPatch.Event.PushLog($"[Header::TryParseHeaderInfo] Version: {pFileVer} Compression: {headerInfo.compMode}", Verbosity.Debug);
             }
             else if (hInfoArr.Length != 3) throw new IndexOutOfRangeException($"[Header::TryParseHeaderInfo] Header info is incomplete! Expecting 3 parts but got {hInfoArr.Length} part(s) instead (Raw: {headerInfoLine})");
@@ -55,20 +55,20 @@ namespace SharpHDiffPatch.Core.Patch
                 else if (!Enum.TryParse(hInfoArr[2], true, out headerInfo.checksumMode)) throw new FormatException($"[Header::TryParseHeaderInfo] This patcher doesn't support {hInfoArr[2]} checksum!");
                 HDiffPatch.Event.PushLog($"[Header::TryParseHeaderInfo] Version: {hInfoVer} ChecksumMode: {headerInfo.checksumMode} Compression: {headerInfo.compMode}", Verbosity.Debug);
 
-                TryReadHeaderAndReferenceInfo(sr, ref headerInfo, ref referenceInfo);
-                TryReadExternReferenceInfo(sr, diffPath, ref headerInfo, ref referenceInfo);
+                TryReadHeaderAndReferenceInfo(HDiffPatch, sr, ref headerInfo, ref referenceInfo);
+                TryReadExternReferenceInfo(HDiffPatch, sr, diffPath, ref headerInfo, ref referenceInfo);
             }
             else
             {
-                TryReadNonSingleFileHeaderInfo(sr, diffPath, ref headerInfo);
+                TryReadNonSingleFileHeaderInfo(HDiffPatch, sr, diffPath, ref headerInfo);
             }
 
             return isPatchDir;
         }
 
-        private static bool TryParseCompressionEnum(string input, out CompressionMode compOut) => Enum.TryParse(input, out compOut);
+        private static bool TryParseCompressionEnum(this HDiffPatch HDiffPatch, string input, out CompressionMode compOut) => Enum.TryParse(input, out compOut);
 
-        private static void TryReadExternReferenceInfo(Stream sr, string diffPath, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
+        private static void TryReadExternReferenceInfo(this HDiffPatch HDiffPatch, Stream sr, string diffPath, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
         {
             long curPos = sr.Position;
             referenceInfo.headDataOffset = curPos;
@@ -85,10 +85,10 @@ namespace SharpHDiffPatch.Core.Patch
 
             HDiffPatch.Event.PushLog($"[Header::TryReadExternReferenceInfo] headDataOffset: {referenceInfo.headDataOffset} | privateExternDataOffset: {referenceInfo.privateExternDataOffset} | externDataOffset: {referenceInfo.externDataOffset} | hdiffDataOffset: {referenceInfo.hdiffDataOffset} | hdiffDataSize: {referenceInfo.hdiffDataSize}", Verbosity.Debug);
 
-            TryIdentifyDiffType(sr, diffPath, ref headerInfo, ref referenceInfo);
+            TryIdentifyDiffType(HDiffPatch, sr, diffPath, ref headerInfo, ref referenceInfo);
         }
 
-        private static void TryIdentifyDiffType(Stream sr, string diffPath, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
+        private static void TryIdentifyDiffType(this HDiffPatch HDiffPatch, Stream sr, string diffPath, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
         {
             sr.Position = referenceInfo.hdiffDataOffset;
             string singleCompressedHeaderLine = sr.ReadStringToNull();
@@ -101,7 +101,7 @@ namespace SharpHDiffPatch.Core.Patch
                 singleCompressedHeaderArr[0] == "HDIFFSF20")
 #endif
             {
-                TryReadSingleFileHeaderInfo(sr, diffPath, ref headerInfo, referenceInfo);
+                TryReadSingleFileHeaderInfo(HDiffPatch, sr, diffPath, ref headerInfo, referenceInfo);
                 return;
             }
 
@@ -110,10 +110,10 @@ namespace SharpHDiffPatch.Core.Patch
             if (singleCompressedHeaderArr[1] != "" && !Enum.TryParse(singleCompressedHeaderArr[1], true, out headerInfo.compMode)) throw new FormatException($"[Header::TryIdentifyDiffType] The compression chunk has unsupported compression: {singleCompressedHeaderArr[1]}");
             headerInfo.headerMagic = singleCompressedHeaderArr[0];
 
-            TryReadNonSingleFileHeaderInfo(sr, diffPath, ref headerInfo);
+            TryReadNonSingleFileHeaderInfo(HDiffPatch, sr, diffPath, ref headerInfo);
         }
 
-        private static void TryReadSingleFileHeaderInfo(Stream sr, string diffPath, ref HeaderInfo headerInfo, DataReferenceInfo referenceInfo)
+        private static void TryReadSingleFileHeaderInfo(this HDiffPatch HDiffPatch, Stream sr, string diffPath, ref HeaderInfo headerInfo, DataReferenceInfo referenceInfo)
         {
             headerInfo.patchPath = diffPath;
             headerInfo.singleChunkInfo = new DiffSingleChunkInfo();
@@ -134,7 +134,7 @@ namespace SharpHDiffPatch.Core.Patch
             HDiffPatch.Event.PushLog($"[Header::TryReadSingleFileHeaderInfo] compressedCount: {headerInfo.compressedCount}", Verbosity.Debug);
         }
 
-        private static void TryReadNonSingleFileHeaderInfo(Stream sr, string diffPath, ref HeaderInfo headerInfo)
+        private static void TryReadNonSingleFileHeaderInfo(this HDiffPatch HDiffPatch, Stream sr, string diffPath, ref HeaderInfo headerInfo)
         {
             headerInfo.patchPath = diffPath;
 
@@ -144,7 +144,7 @@ namespace SharpHDiffPatch.Core.Patch
 
             HDiffPatch.Event.PushLog($"[Header::TryReadNonSingleFileHeaderInfo] oldDataSize: {headerInfo.oldDataSize} | newDataSize: {headerInfo.newDataSize}", Verbosity.Debug);
 
-            GetDiffChunkInfo(sr, ref headerInfo.chunkInfo, typeEndPos);
+            GetDiffChunkInfo(HDiffPatch, sr, ref headerInfo.chunkInfo, typeEndPos);
 
             headerInfo.compressedCount = ((headerInfo.chunkInfo.compress_cover_buf_size > 1) ? 1 : 0)
                                        + ((headerInfo.chunkInfo.compress_rle_ctrlBuf_size > 1) ? 1 : 0)
@@ -154,7 +154,7 @@ namespace SharpHDiffPatch.Core.Patch
             HDiffPatch.Event.PushLog($"[Header::TryReadNonSingleFileHeaderInfo] compressedCount: {headerInfo.compressedCount}", Verbosity.Debug);
         }
 
-        private static void GetDiffChunkInfo(Stream sr, ref DiffChunkInfo chunkInfo, long typeEndPos)
+        private static void GetDiffChunkInfo(this HDiffPatch HDiffPatch, Stream sr, ref DiffChunkInfo chunkInfo, long typeEndPos)
         {
             chunkInfo = new DiffChunkInfo();
 
@@ -188,7 +188,7 @@ namespace SharpHDiffPatch.Core.Patch
             HDiffPatch.Event.PushLog($"[Header::GetDiffChunkInfo] headEndPos: {chunkInfo.headEndPos} | coverEndPos: {chunkInfo.coverEndPos}", Verbosity.Debug);
         }
 
-        private static void TryReadHeaderAndReferenceInfo(Stream sr, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
+        private static void TryReadHeaderAndReferenceInfo(this HDiffPatch HDiffPatch, Stream sr, ref HeaderInfo headerInfo, ref DataReferenceInfo referenceInfo)
         {
             headerInfo.isInputDir = sr.ReadBoolean();
             headerInfo.isOutputDir = sr.ReadBoolean();
@@ -237,11 +237,11 @@ namespace SharpHDiffPatch.Core.Patch
             if (referenceInfo.checksumByteSize > 0)
             {
                 HDiffPatch.Event.PushLog($"[Header::TryReadHeaderAndReferenceInfo] Seeking += {referenceInfo.checksumByteSize * 4} bytes from checksum bytes!", Verbosity.Debug);
-                TrySeekHeader(sr, referenceInfo.checksumByteSize * 4);
+                TrySeekHeader(HDiffPatch, sr, referenceInfo.checksumByteSize * 4);
             }
         }
 
-        private static void TrySeekHeader(Stream sr, int skipLongSize)
+        private static void TrySeekHeader(this HDiffPatch HDiffPatch, Stream sr, int skipLongSize)
         {
             int len = Math.Min(4 << 10, skipLongSize);
             HDiffPatch.Event.PushLog($"[Header::TrySeekHeader] Seeking from: {sr.Position} += {skipLongSize} to {sr.Position + skipLongSize}", Verbosity.Debug);
