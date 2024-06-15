@@ -23,9 +23,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!--<PackageReference Include="Hi3Helper.ZstdNet" Version="*" Condition="!$(DefineConstants.Contains('NETSTANDARD2_0'))" />
+		<PackageReference Include="Hi3Helper.ZstdNet" Version="*" Condition="!$(DefineConstants.Contains('NETSTANDARD2_0'))" />
 		<PackageReference Include="System.Buffers" Version="*" Condition="$(DefineConstants.Contains('NETSTANDARD2_0'))" />
-		<PackageReference Include="System.Memory" Version="*" Condition="$(DefineConstants.Contains('NETSTANDARD2_0'))" />-->
+		<PackageReference Include="System.Memory" Version="*" Condition="$(DefineConstants.Contains('NETSTANDARD2_0'))" />
 		<PackageReference Include="ZstdSharp.Port" Version="*" />
 	</ItemGroup>
 
