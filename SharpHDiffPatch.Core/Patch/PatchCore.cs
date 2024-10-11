@@ -28,7 +28,6 @@ namespace SharpHDiffPatch.Core.Patch
         internal long oldPos;
         internal long newPos;
         internal long coverLength;
-        internal long currentCoverIndex;
         internal long nextCoverIndex;
     }
 
@@ -424,7 +423,7 @@ namespace SharpHDiffPatch.Core.Patch
                 {
                     int length = (int)memSetStep;
                     long lastPos = outCache.Position;
-                    outCache.Read(sharedBuffer, 0, length);
+                    _ = outCache.Read(sharedBuffer, 0, length);
                     outCache.Position = lastPos;
 
                 SetAddRLESingle:
@@ -630,7 +629,11 @@ namespace SharpHDiffPatch.Core.Patch
 
         private void CopyFile(string inputPath, string outputPath)
         {
+#if NET6_0_OR_GREATER
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(_maxArrayCopyLen);
+#else
             byte[] buffer = new byte[_maxArrayCopyLen];
+#endif
             try
             {
                 using (FileStream ifs = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -650,10 +653,6 @@ namespace SharpHDiffPatch.Core.Patch
                 }
             }
             catch { throw; }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
         }
     }
 }
