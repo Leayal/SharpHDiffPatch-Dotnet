@@ -81,7 +81,7 @@ namespace SharpHDiffPatch.Core.Patch
 
             if (isBuffered && !isFastBufferUsed)
             {
-                HDiffPatch.Event.PushLog($"[PatchCore::GetBufferStreamFromOffset] Caching stream from offset: {start} with length: {(compLength > 0 ? compLength : length)}");
+                // HDiffPatch.Event.PushLog($"[PatchCore::GetBufferStreamFromOffset] Caching stream from offset: {start} with length: {(compLength > 0 ? compLength : length)}");
                 using (returnStream)
                 {
                     MemoryStream stream = CreateAndCopyToMemoryStream(returnStream);
@@ -132,7 +132,7 @@ namespace SharpHDiffPatch.Core.Patch
             long _oldPosBack = 0,
                  _newPosBack = 0;
 
-            HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::GetCoverHeaders] Getting cover headers from buffer with size: {coverSize}", Verbosity.Verbose);
+            // HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::GetCoverHeaders] Getting cover headers from buffer with size: {coverSize}", Verbosity.Verbose);
             
             CoverHeader[] headers = new CoverHeader[coverCount];
             for (long i = 0; i < coverCount; i++)
@@ -198,10 +198,10 @@ namespace SharpHDiffPatch.Core.Patch
 
                 CoverHeader[] coverHeaders = GetCoverHeaders(clips[0], coverSize, coverCount, _token);
 
-                HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::WriteCoverStreamToOutput] Copying CombinedStream instance into {threadCount} instances!", Verbosity.Verbose);
+                // HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::WriteCoverStreamToOutput] Copying CombinedStream instance into {threadCount} instances!", Verbosity.Verbose);
                 CombinedStream[] inputCombinedStreamIns = CopyCombinedStream((CombinedStream)inputStream, threadCount);
                 CombinedStream[] outputCombinedStreamIns = CopyCombinedStream((CombinedStream)outputStream, threadCount);
-                HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::WriteCoverStreamToOutput] Done copying CombinedStream instances!", Verbosity.Verbose);
+                // HDiffPatch.Event.PushLog($"[PatchCoreMultiThread::WriteCoverStreamToOutput] Done copying CombinedStream instances!", Verbosity.Verbose);
 
                 // goto SingleThreadMode;
                 Parallel.ForEach(coverHeaders, new ParallelOptions { CancellationToken = _token, MaxDegreeOfParallelism = threadCount }, (cover) =>
@@ -269,7 +269,7 @@ namespace SharpHDiffPatch.Core.Patch
         internal void SpawnCorePatchFinishedMsg()
         {
             TimeSpan timeTaken = _stopwatch.Elapsed;
-            HDiffPatch.Event.PushLog($"Patching has been finished in {timeTaken.TotalSeconds} seconds ({timeTaken.TotalMilliseconds} ms)");
+            // HDiffPatch.Event.PushLog($"Patching has been finished in {timeTaken.TotalSeconds} seconds ({timeTaken.TotalMilliseconds} ms)");
         }
 
         private void TBytesCopyOldClipPatch(Stream outCache, Stream inputStream, ref RLERefClipStruct rleLoader, long oldPos, long addLength, byte[] sharedBuffer,
@@ -513,12 +513,12 @@ namespace SharpHDiffPatch.Core.Patch
         {
             if (_dirReferencePair.HasValue)
             {
-                HDiffPatch.Event.PushLog("Start copying similar data");
+                // HDiffPatch.Event.PushLog("Start copying similar data");
                 CopyOldSimilarToNewFiles(_dirReferencePair.Value);
 
                 TimeSpan timeTaken = _stopwatch.Elapsed;
-                HDiffPatch.Event.PushLog($"Copying similar data has been finished in {timeTaken.TotalSeconds} seconds ({timeTaken.TotalMilliseconds} ms)");
-                HDiffPatch.Event.PushLog($"Starting patching process...");
+                // HDiffPatch.Event.PushLog($"Copying similar data has been finished in {timeTaken.TotalSeconds} seconds ({timeTaken.TotalMilliseconds} ms)");
+                // HDiffPatch.Event.PushLog($"Starting patching process...");
                 _stopwatch.Restart();
             }
         }
@@ -582,7 +582,7 @@ namespace SharpHDiffPatch.Core.Patch
                         else if (!isPathADir && !File.Exists(combinedNewPath)) File.Create(combinedNewPath).Dispose();
                     }
 
-                    HDiffPatch.Event.PushLog($"[PatchCore::CopyOldSimilarToNewFiles] Created a new {(isPathADir ? "directory" : "empty file")}: {combinedNewPath}", Verbosity.Debug);
+                    // HDiffPatch.Event.PushLog($"[PatchCore::CopyOldSimilarToNewFiles] Created a new {(isPathADir ? "directory" : "empty file")}: {combinedNewPath}", Verbosity.Debug);
 
                     ++_curPathIndex;
                 }
@@ -598,7 +598,7 @@ namespace SharpHDiffPatch.Core.Patch
             string newDirFullPath = Path.GetDirectoryName(newFullPath);
             if (!Directory.Exists(newDirFullPath)) Directory.CreateDirectory(newDirFullPath);
 
-            HDiffPatch.Event.PushLog($"[PatchCore::CopyFileByPairIndex] Copying similar file to target path: {oldFullPath} -> {newFullPath}", Verbosity.Debug);
+            // HDiffPatch.Event.PushLog($"[PatchCore::CopyFileByPairIndex] Copying similar file to target path: {oldFullPath} -> {newFullPath}", Verbosity.Debug);
             CopyFile(oldFullPath, newFullPath);
         }
 

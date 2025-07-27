@@ -50,7 +50,7 @@ namespace SharpHDiffPatch.Core.Binary.Compression
             outLength = compLength > 0 ? compLength : length;
             long toCompLength = sourceStream.Position + outLength;
 
-            HDiffPatch.Event.PushLog($"[PatchCore::GetDecompressStreamPlugin] Assigning stream of compression: {type} at start pos: {toPosition} to end pos: {toCompLength}", Verbosity.Verbose);
+            // HDiffPatch.Event.PushLog($"[PatchCore::GetDecompressStreamPlugin] Assigning stream of compression: {type} at start pos: {toPosition} to end pos: {toCompLength}", Verbosity.Verbose);
             Stream rawStream;
             if (isBuffered)
                 rawStream = new ChunkStream(sourceStream, toPosition, toCompLength);
@@ -131,7 +131,7 @@ namespace SharpHDiffPatch.Core.Binary.Compression
             byte[] props = new byte[propLen];
             _ = rawStream.Read(props, 0, propLen);
             int dicSize = MemoryMarshal.Read<int>(props.AsSpan(1));
-            HDiffPatch.Event.PushLog($"[PatchCore::CreateLzmaStream] Assigning LZMA stream with dictionary size: {dicSize}", Verbosity.Verbose);
+            // HDiffPatch.Event.PushLog($"[PatchCore::CreateLzmaStream] Assigning LZMA stream with dictionary size: {dicSize}", Verbosity.Verbose);
             return new LzmaStream(props, rawStream, -1, -1, rawStream, false);
         }
     }

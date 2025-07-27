@@ -68,7 +68,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
             Length = _underlyingStartingPositions[_underlyingStartingPositions.Length - 1] + _underlyingStreams[_underlyingStreams.Length - 1].Length;
 
 #if SHOWMOREDEBUGINFO
-            HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Total length of the CombinedStream: {_TotalLength} bytes with total of {underlyingStreams.Length} streams", Verbosity.Debug);
+            // HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Total length of the CombinedStream: {_TotalLength} bytes with total of {underlyingStreams.Length} streams", Verbosity.Debug);
 #endif
         }
 
@@ -99,7 +99,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
 
                 stream.Stream.SetLength(stream.Size);
 #if SHOWMOREDEBUGINFO
-                HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Initializing file with length {stream.size} bytes: {stream.stream.Name}", Verbosity.Debug);
+                // HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Initializing file with length {stream.size} bytes: {stream.stream.Name}", Verbosity.Debug);
 #endif
             }
 
@@ -115,7 +115,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
             Length = _underlyingStartingPositions[_underlyingStartingPositions.Length - 1] + underlyingStreams[_underlyingStreams.Length - 1].Size;
 
 #if SHOWMOREDEBUGINFO
-            HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Total length of the CombinedStream: {_TotalLength} bytes with total of {underlyingStreams.Length} streams", Verbosity.Debug);
+            // HDiffPatch.Event.PushLog($"[CombinedStream::ctor()] Total length of the CombinedStream: {_TotalLength} bytes with total of {underlyingStreams.Length} streams", Verbosity.Debug);
 #endif
         }
 
@@ -235,7 +235,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
                 {
                     _index++;
 #if SHOWMOREDEBUGINFO
-                    HDiffPatch.Event.PushLog($"[CombinedStream::Read] Moving the stream to Index: {_Index}", Verbosity.Debug);
+                    // HDiffPatch.Event.PushLog($"[CombinedStream::Read] Moving the stream to Index: {_Index}", Verbosity.Debug);
 #endif
                 }
                 else
@@ -278,7 +278,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
                 {
                     _index++;
 #if SHOWMOREDEBUGING
-                    HDiffPatch.Event.PushLog($"[CombinedStream::Read] Moving the stream to Index: {_Index}", Verbosity.Debug);
+                    // HDiffPatch.Event.PushLog($"[CombinedStream::Read] Moving the stream to Index: {_Index}", Verbosity.Debug);
 #endif
                 }
                 else
@@ -356,7 +356,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
                 {
                     _index++;
 #if SHOWMOREDEBUGINFO
-                    HDiffPatch.Event.PushLog($"[CombinedStream::Write] Moving the stream to Index: {_Index}", Verbosity.Debug);
+                    // HDiffPatch.Event.PushLog($"[CombinedStream::Write] Moving the stream to Index: {_Index}", Verbosity.Debug);
 #endif
                 }
                 else
@@ -396,7 +396,7 @@ namespace SharpHDiffPatch.Core.Binary.Streams
                 {
                     _index++;
 #if SHOWMOREDEBUGINFO
-                    HDiffPatch.Event.PushLog($"[CombinedStream::Write] Moving the stream to Index: {_Index}", Verbosity.Debug);
+                    // HDiffPatch.Event.PushLog($"[CombinedStream::Write] Moving the stream to Index: {_Index}", Verbosity.Debug);
 #endif
                 }
                 else

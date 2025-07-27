@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using SharpHDiffPatch.Core.Binary.Compression;
+using System.Runtime.CompilerServices;
 
 namespace SharpHDiffPatch.Core
 {
@@ -118,7 +119,7 @@ namespace SharpHDiffPatch.Core
         public readonly bool isPatchDir;
 
         public readonly PatchEvent PatchEvent = new PatchEvent();
-        public readonly static EventListener Event = new EventListener();
+        public readonly EventListener Event = new EventListener();
 
         public static Verbosity LogVerbosity { get; set; } = Verbosity.Quiet;
 
@@ -223,12 +224,11 @@ namespace SharpHDiffPatch.Core
         }
     }
 
-    public class EventListener
+    public sealed class EventListener
     {
         // Log for external listener
-        public static event EventHandler<PatchEvent> PatchEvent;
-        public static event EventHandler<LoggerEvent> LoggerEvent;
-        public void PushEvent(PatchEvent patchEvent) { }
-        public void PushLog(in string message, Verbosity logLevel = Verbosity.Info) { }
+        public event EventHandler<PatchEvent> PatchEvent;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void PushEvent(PatchEvent patchEvent) => this.PatchEvent?.Invoke(this, patchEvent);
     }
 }

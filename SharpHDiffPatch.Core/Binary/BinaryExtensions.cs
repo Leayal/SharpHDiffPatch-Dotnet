@@ -210,7 +210,7 @@ namespace SharpHDiffPatch.Core.Binary
                 backValue += 1 + num;
                 if (backValue > checkCount) throw new InvalidDataException($"[PatchDir::GetLongsFromStream] Given back value for the reference list is invalid! Having {i} refs while expecting max: {checkCount}");
 #if DEBUG && SHOWDEBUGINFO
-                HDiffPatch.Event.PushLog($"[PatchDir::GetLongsFromStream] value {i} - {count}: {backValue}", Verbosity.Debug);
+                // HDiffPatch.Event.PushLog($"[PatchDir::GetLongsFromStream] value {i} - {count}: {backValue}", Verbosity.Debug);
 #endif
                 outputLongs[i] = backValue;
             }
@@ -224,7 +224,7 @@ namespace SharpHDiffPatch.Core.Binary
                 long num = reader.ReadLong7Bit();
                 outputLongs[i] = num;
 #if DEBUG && SHOWDEBUGINFO
-                HDiffPatch.Event.PushLog($"[PatchDir::GetLongsFromStream] value {i} - {count}: {num}", Verbosity.Debug);
+                // HDiffPatch.Event.PushLog($"[PatchDir::GetLongsFromStream] value {i} - {count}: {num}", Verbosity.Debug);
 #endif
             }
         }
@@ -252,7 +252,7 @@ namespace SharpHDiffPatch.Core.Binary
 
                 if (backOldValue > checkEndOldValue) throw new InvalidDataException($"[PatchDir::GetArrayOfSamePairULongTag] Given back old value for the list is invalid! Having {backOldValue} value while expecting max: {checkEndOldValue}");
 #if DEBUG && SHOWDEBUGINFO
-                HDiffPatch.Event.PushLog($"[PatchDir::GetArrayOfSamePairULongTag] value {i} - {pairCount}: newIndex -> {backNewValue} oldIndex -> {backOldValue}", Verbosity.Debug);
+                // HDiffPatch.Event.PushLog($"[PatchDir::GetArrayOfSamePairULongTag] value {i} - {pairCount}: newIndex -> {backNewValue} oldIndex -> {backOldValue}", Verbosity.Debug);
 #endif
                 outPair[i] = new PairIndexReference { NewIndex = backNewValue, OldIndex = backOldValue };
             }

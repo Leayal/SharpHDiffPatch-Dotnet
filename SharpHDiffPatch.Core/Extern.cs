@@ -52,7 +52,7 @@ namespace SharpHDiffPatch.Core
         {
             libraryName = string.Format(_libFullPath, libraryName);
             string searchPathName = searchPath == null ? "Default" : searchPath.ToString();
-            // HDiffPatch.Event.PushLog($"[Extern::DllImportResolver] Loading library from path: {libraryName} | Search path: {searchPathName}", Verbosity.Debug);
+            // // HDiffPatch.Event.PushLog($"[Extern::DllImportResolver] Loading library from path: {libraryName} | Search path: {searchPathName}", Verbosity.Debug);
             // Try load the library and if fails, then throw.
             bool isLoadSuccessful = NativeLibrary.TryLoad(libraryName, assembly, searchPath, out IntPtr pResult);
             if (!isLoadSuccessful || pResult == IntPtr.Zero)
