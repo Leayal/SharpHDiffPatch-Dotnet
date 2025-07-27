@@ -43,8 +43,9 @@ namespace SharpHDiffPatch.Core.Patch
 #endif
         private int _padding;
         private readonly CancellationToken _token;
+        private readonly HDiffPatch HDiffPatch;
 
-        public PatchDir(HeaderInfo headerInfo, DataReferenceInfo referenceInfo, string patchPath, CancellationToken token
+        public PatchDir(HDiffPatch HDiffPatch, HeaderInfo headerInfo, DataReferenceInfo referenceInfo, string patchPath, CancellationToken token
 #if USEEXPERIMENTALMULTITHREAD
             , bool useMultiThread
 #endif
@@ -84,11 +85,11 @@ namespace SharpHDiffPatch.Core.Patch
                 else
 #endif
             if (_useFastBuffer && _useBufferedPatch && !_headerInfo.isSingleCompressedDiff)
-                patchCore = new PatchCoreFastBuffer(_headerInfo.newDataSize, Stopwatch.StartNew(), _basePathInput, _basePathOutput, writeBytesDelegate, _token);
+                patchCore = new PatchCoreFastBuffer(HDiffPatch, _headerInfo.newDataSize, Stopwatch.StartNew(), _basePathInput, _basePathOutput, writeBytesDelegate, _token);
             else
-                patchCore = new PatchCore(_headerInfo.newDataSize, Stopwatch.StartNew(), _basePathInput, _basePathOutput, writeBytesDelegate, _token);
+                patchCore = new PatchCore(HDiffPatch, _headerInfo.newDataSize, Stopwatch.StartNew(), _basePathInput, _basePathOutput, writeBytesDelegate, _token);
 
-            CompressionStreamHelper.GetDecompressStreamPlugin(_headerInfo.compMode, patchStream, out Stream decompressedHeadStream,
+            CompressionStreamHelper.GetDecompressStreamPlugin(HDiffPatch, _headerInfo.compMode, patchStream, out Stream decompressedHeadStream,
                 _referenceInfo.headDataSize, _referenceInfo.headDataCompressedSize - headerPadding, out _, _useBufferedPatch);
 
             HDiffPatch.Event.PushLog("[PatchDir::Patch] Initializing stream to binary readers", Verbosity.Debug);
@@ -131,7 +132,7 @@ namespace SharpHDiffPatch.Core.Patch
                     long lastPos = patchStream.Position;
                     HDiffPatch.Event.PushLog($"[PatchDir::Patch] Staring patching routine at position: {lastPos}", Verbosity.Verbose);
 
-                    HDiffPatch.DisplayDirPatchInformation(oldFileSize, totalSizePatched, _headerInfo);
+                    //HDiffPatch.DisplayDirPatchInformation(oldFileSize, totalSizePatched, _headerInfo);
                     StartPatchRoutine(oldStream, newStream, _headerInfo.newDataSize, lastPos, patchCore);
                 }
             }

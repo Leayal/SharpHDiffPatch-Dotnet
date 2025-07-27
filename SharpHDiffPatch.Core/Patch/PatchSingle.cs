@@ -6,13 +6,14 @@ using SharpHDiffPatch.Core.Binary.Compression;
 
 namespace SharpHDiffPatch.Core.Patch
 {
-    public sealed class PatchSingle(HeaderInfo headerInfo, CancellationToken token) : IPatch
+    public sealed class PatchSingle(HDiffPatch _HDiffPatch, HeaderInfo headerInfo, CancellationToken token) : IPatch
     {
         private readonly Func<Stream> _spawnPatchStream = headerInfo.patchCreateStream ?? (() => new FileStream(headerInfo.patchPath, FileMode.Open, FileAccess.Read, FileShare.Read));
 
         private bool _isUseBufferedPatch;
         private bool _isUseFullBuffer;
         private bool _isUseFastBuffer;
+        private readonly HDiffPatch HDiffPatch = _HDiffPatch;
 
         public void Patch(string input, string output, Action<long> writeBytesDelegate, bool useBufferedPatch, bool useFullBuffer, bool useFastBuffer)
         {
@@ -30,9 +31,9 @@ namespace SharpHDiffPatch.Core.Patch
 
             IPatchCore patchCore;
             if (_isUseFastBuffer && _isUseBufferedPatch)
-                patchCore = new PatchCoreFastBuffer(headerInfo.newDataSize, Stopwatch.StartNew(), input, output, writeBytesDelegate, token);
+                patchCore = new PatchCoreFastBuffer(HDiffPatch, headerInfo.newDataSize, Stopwatch.StartNew(), input, output, writeBytesDelegate, token);
             else
-                patchCore = new PatchCore(headerInfo.newDataSize, Stopwatch.StartNew(), input, output, writeBytesDelegate, token);
+                patchCore = new PatchCore(HDiffPatch, headerInfo.newDataSize, Stopwatch.StartNew(), input, output, writeBytesDelegate, token);
 
             StartPatchRoutine(inputStream, outputStream, patchCore);
         }

@@ -76,6 +76,7 @@ namespace SharpHDiffPatch.Core.Patch
         internal DirectoryReferencePair? DirReferencePair;
 
         private readonly Action<long>? _writeBytesDelegate;
+        private readonly HDiffPatch HDiffPatch;
 
         static unsafe PatchCore()
         {
@@ -96,8 +97,9 @@ namespace SharpHDiffPatch.Core.Patch
                             TBytesSetRleVectorSoftware;
         }
 
-        internal PatchCore(long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath, Action<long>? writeBytesDelegate, CancellationToken token)
+        internal PatchCore(HDiffPatch HDiffPatch, long sizeToBePatched, Stopwatch stopwatch, string inputPath, string outputPath, Action<long>? writeBytesDelegate, CancellationToken token)
         {
+            this.HDiffPatch = HDiffPatch;
             Token = token;
             SizeToBePatched = sizeToBePatched;
             Stopwatch = stopwatch;
@@ -120,7 +122,7 @@ namespace SharpHDiffPatch.Core.Patch
         {
             sourceStream.Position = start;
 
-            CompressionStreamHelper.GetDecompressStreamPlugin(compMode, sourceStream, out Stream returnStream, length, compLength, out outLength, isBuffered);
+            CompressionStreamHelper.GetDecompressStreamPlugin(this.HDiffPatch, compMode, sourceStream, out Stream returnStream, length, compLength, out outLength, isBuffered);
 
             if (!isBuffered || isFastBufferUsed) return returnStream;
             HDiffPatch.Event.PushLog($"[PatchCore::GetBufferStreamFromOffset] Caching stream from offset: {start} with length: {(compLength > 0 ? compLength : length)}");

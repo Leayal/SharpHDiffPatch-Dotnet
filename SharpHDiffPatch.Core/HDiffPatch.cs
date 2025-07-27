@@ -112,23 +112,18 @@ namespace SharpHDiffPatch.Core
 
     public sealed class HDiffPatch
     {
-        private HeaderInfo headerInfo;
-        private DataReferenceInfo referenceInfo { get; set; }
-        private Stream diffStream { get; set; }
-        private bool isPatchDir { get; set; }
+        public readonly HeaderInfo headerInfo;
+        public readonly DataReferenceInfo referenceInfo;
+        public readonly Stream diffStream;
+        public readonly bool isPatchDir;
 
-        internal static PatchEvent PatchEvent = new PatchEvent();
-        public static EventListener Event = new EventListener();
+        internal readonly static PatchEvent PatchEvent = new PatchEvent();
+        public readonly static EventListener Event = new EventListener();
 
         public static Verbosity LogVerbosity { get; set; } = Verbosity.Quiet;
 
-        public HDiffPatch()
-        {
-            isPatchDir = true;
-        }
-
         #region Header Initialization
-        public void Initialize(string diff)
+        public HDiffPatch(string diff)
         {
             using (diffStream = new FileStream(diff, FileMode.Open, FileAccess.Read))
             {
@@ -139,7 +134,7 @@ namespace SharpHDiffPatch.Core
             }
         }
 
-        public void Initialize(Func<Stream> diffCreateStream)
+        public HDiffPatch(Func<Stream> diffCreateStream)
         {
             using (diffStream = diffCreateStream())
             {
@@ -167,7 +162,7 @@ namespace SharpHDiffPatch.Core
             IPatch patcher;
             if (isPatchDir && headerInfo.isInputDir && headerInfo.isOutputDir)
             {
-                patcher = new PatchDir(headerInfo, referenceInfo, headerInfo.patchPath, token
+                patcher = new PatchDir(this, headerInfo, referenceInfo, headerInfo.patchPath, token
 #if USEEXPERIMENTALMULTITHREAD
                     useMultiThread
 #endif
@@ -175,31 +170,13 @@ namespace SharpHDiffPatch.Core
             }
             else
             {
-                patcher = new PatchSingle(headerInfo, token);
+                patcher = new PatchSingle(this, headerInfo, token);
             }
             patcher.Patch(inputPath, outputPath, writeBytesDelegate, useBufferedPatch, useFullBuffer, useFastBuffer);
         }
 #endregion
 
-        internal static void DisplayDirPatchInformation(long oldFileSize, long newFileSize, HeaderInfo headerInfo)
-        {
-            Event.PushLog("Patch Information:");
-            Event.PushLog($"    Size -> Old: {oldFileSize} bytes | New: {newFileSize} bytes");
-            Event.PushLog("Technical Information:");
-            if (!headerInfo.isSingleCompressedDiff)
-            {
-                Event.PushLog($"    Cover Data -> Count: {headerInfo.chunkInfo.coverCount} | Offset: {headerInfo.chunkInfo.headEndPos} | Size: {headerInfo.chunkInfo.cover_buf_size}");
-                Event.PushLog($"    RLE Data -> Offset: {headerInfo.chunkInfo.coverEndPos} | Control: {headerInfo.chunkInfo.rle_ctrlBuf_size} | Code: {headerInfo.chunkInfo.rle_codeBuf_size}");
-                Event.PushLog($"    Diff Data -> Size: {headerInfo.chunkInfo.newDataDiff_size}");
-            }
-            else
-            {
-                Event.PushLog($"    Cover Data -> Count: {headerInfo.chunkInfo.coverCount} | DiffDataPos: {headerInfo.singleChunkInfo.diffDataPos}");
-                Event.PushLog($"    RLE Data -> Compressed Size: {headerInfo.singleChunkInfo.compressedSize} | Size: {headerInfo.singleChunkInfo.uncompressedSize}");
-            }
-        }
-
-        internal static void UpdateEvent(long read, ref long currentSizePatched, ref long totalSizePatched, Stopwatch patchStopwatch)
+        internal void UpdateEvent(long read, ref long currentSizePatched, ref long totalSizePatched, Stopwatch patchStopwatch)
         {
             lock (PatchEvent)
             {
@@ -251,11 +228,7 @@ namespace SharpHDiffPatch.Core
         // Log for external listener
         public static event EventHandler<PatchEvent> PatchEvent;
         public static event EventHandler<LoggerEvent> LoggerEvent;
-        public void PushEvent(PatchEvent patchEvent) => PatchEvent?.Invoke(this, patchEvent);
-        public void PushLog(in string message, Verbosity logLevel = Verbosity.Info)
-        {
-            if (logLevel != Verbosity.Quiet)
-                LoggerEvent?.Invoke(this, new LoggerEvent(message, logLevel));
-        }
+        public void PushEvent(PatchEvent patchEvent) { }
+        public void PushLog(in string message, Verbosity logLevel = Verbosity.Info) { }
     }
 }
