@@ -117,7 +117,7 @@ namespace SharpHDiffPatch.Core
         public readonly Stream diffStream;
         public readonly bool isPatchDir;
 
-        internal readonly static PatchEvent PatchEvent = new PatchEvent();
+        internal readonly PatchEvent PatchEvent = new PatchEvent();
         public readonly static EventListener Event = new EventListener();
 
         public static Verbosity LogVerbosity { get; set; } = Verbosity.Quiet;
